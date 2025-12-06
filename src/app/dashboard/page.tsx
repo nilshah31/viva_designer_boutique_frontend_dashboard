@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Customers from "../customers/customers";
+import {
+  FaUsers,
+  FaShoppingBag,
+  FaRulerCombined,
+  FaSignOutAlt,
+  FaBars,
+} from "react-icons/fa";
 
 // ✅ MODULE TYPES
 type Module = "customers" | "orders" | "measurements" | null;
@@ -23,7 +30,8 @@ const Measurements = () => (
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [activeModule, setActiveModule] = useState<Module>(null);
+  const [activeModule, setActiveModule] = useState<Module>("customers");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -44,51 +52,122 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-black text-white">
+    <div className="min-h-screen flex bg-black text-white relative">
       
-      {/* LEFT MENU */}
-      <aside className="w-64 bg-[#111] p-6 border-r border-gray-800">
-        <h2 className="text-xl font-bold mb-8">Viva Dashboard</h2>
+      {/* ✅ MOBILE TOP BAR */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-[#111] border-b border-gray-800 flex items-center justify-between px-4 py-3">
+        <h2 className="text-lg font-bold text-gold">Viva Admin</h2>
+        <FaBars
+          onClick={() => setSidebarOpen(true)}
+          className="text-xl cursor-pointer"
+        />
+      </div>
 
-        <nav className="space-y-4 text-sm">
-          <div
-            onClick={() => setActiveModule("customers")}
-            className={`cursor-pointer hover:text-gold ${
-              activeModule === "customers" ? "text-gold" : ""
-            }`}
+      {/* ✅ OVERLAY */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/70 z-40 md:hidden"
+        />
+      )}
+
+      {/* ✅ SIDEBAR */}
+      <aside
+        className={`
+          fixed md:static top-0 left-0 z-50 h-full w-64
+          bg-gradient-to-b from-[#0b0b0b] to-[#111]
+          p-6 border-r border-gray-800 flex flex-col
+          transform transition-transform duration-300
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+        `}
+      >
+        {/* TITLE */}
+        <div className="mb-10 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-gold">Viva Admin</h2>
+            <p className="text-xs text-gray-500">Dashboard Control</p>
+          </div>
+
+          {/* CLOSE (MOBILE) */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden text-gray-400 text-xl"
           >
+            ✕
+          </button>
+        </div>
+
+        {/* MENU */}
+        <nav className="space-y-2 flex-1 text-sm">
+
+          {/* CUSTOMERS */}
+          <div
+            onClick={() => {
+              setActiveModule("customers");
+              setSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all
+              ${
+                activeModule === "customers"
+                  ? "bg-gold text-black shadow-md"
+                  : "text-gray-300 hover:bg-[#1c1c1c] hover:text-gold"
+              }
+            `}
+          >
+            <FaUsers />
             Customers
           </div>
 
+          {/* ORDERS */}
           <div
-            onClick={() => setActiveModule("orders")}
-            className={`cursor-pointer hover:text-gold ${
-              activeModule === "orders" ? "text-gold" : ""
-            }`}
+            onClick={() => {
+              setActiveModule("orders");
+              setSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all
+              ${
+                activeModule === "orders"
+                  ? "bg-gold text-black shadow-md"
+                  : "text-gray-300 hover:bg-[#1c1c1c] hover:text-gold"
+              }
+            `}
           >
+            <FaShoppingBag />
             Orders
           </div>
 
+          {/* MEASUREMENTS */}
           <div
-            onClick={() => setActiveModule("measurements")}
-            className={`cursor-pointer hover:text-gold ${
-              activeModule === "measurements" ? "text-gold" : ""
-            }`}
+            onClick={() => {
+              setActiveModule("measurements");
+              setSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all
+              ${
+                activeModule === "measurements"
+                  ? "bg-gold text-black shadow-md"
+                  : "text-gray-300 hover:bg-[#1c1c1c] hover:text-gold"
+              }
+            `}
           >
+            <FaRulerCombined />
             Measurements
           </div>
         </nav>
 
+        {/* LOGOUT */}
         <button
           onClick={logout}
-          className="mt-10 w-full bg-red-600 py-2 rounded-lg text-sm hover:bg-red-500 transition"
+          className="mt-8 w-full flex items-center justify-center gap-2 bg-red-600 py-3 rounded-xl text-sm font-semibold hover:bg-red-500 transition"
         >
+          <FaSignOutAlt />
           Logout
         </button>
       </aside>
 
-      {/* RIGHT SIDE */}
-      <main className="flex-1 p-10">
+      {/* ✅ RIGHT CONTENT */}
+      <main className="flex-1 p-4 md:p-10 pt-20 md:pt-10">
         {renderRightPanel()}
       </main>
     </div>
