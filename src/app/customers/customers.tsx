@@ -320,7 +320,7 @@ export default function Customers() {
               />
             </p>
             <p>
-              <b>Address:</b> {selectedCustomer.address}
+              <b>Address:</b>
               <input
                 defaultValue={selectedCustomer.address}
 								onChange={(e) =>
