@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { FaEye, FaPencilAlt, FaTrash } from "react-icons/fa";
+import { FaEye, FaPencilAlt, FaPrint, FaTrash } from "react-icons/fa";
 import CustomerModal from "@/app/components/ui/modals/customer"; // adjust path if needed
+import { FaRulerCombined } from "react-icons/fa6";
+import CustomerMeasurementModal from "@/app/components/ui/modals/customerMeasurement";
+import { CustomerMeasurement } from "../measurements/interfaces/customerMeasurements.interface";
+import printCustomerMeasurement from "./printCustomerMeasurement";
 
-interface Customer {
+export interface Customer {
   id: number;
   name: string;
   mobile: string;
@@ -18,6 +22,14 @@ export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
   );
+
+  const [measurementCustomerId, setMeasurementCustomerId] = useState<
+    number | null
+  >(null);
+
+  const [allMeasurements, setAllMeasurements] = useState<
+    Record<number, CustomerMeasurement>
+  >({});
 
   useEffect(() => {
     const data: Customer[] = Array.from({ length: 67 }).map((_, i) => ({
@@ -140,13 +152,30 @@ export default function Customers() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-4 md:justify-center text-gray-400">
+              <div className="flex gap-5 md:justify-center text-gray-400">
+                <FaRulerCombined
+                  onClick={() => {
+                    setMeasurementCustomerId(customer.id);
+                    setSelectedCustomer(customer);
+                  }}
+                  title="Measurement"
+                  className="cursor-pointer text-lg md:text-xl hover:text-green-400 transition"
+                />
+
                 <FaEye
                   onClick={() => {
                     setSelectedCustomer(customer);
                     setModalMode("view");
                   }}
-                  className="cursor-pointer hover:text-blue-400"
+                  title="View Customer Details"
+                  className="cursor-pointer text-lg md:text-xl hover:text-blue-400 transition"
+                />
+
+                {/* ✅ PRINT BUTTON */}
+                <FaPrint
+                  onClick={() => printCustomerMeasurement(customer)}
+                  title="Print Measurement"
+                  className="cursor-pointer text-lg md:text-xl text-gray-400 hover:text-green-300 transition"
                 />
 
                 <FaPencilAlt
@@ -154,7 +183,8 @@ export default function Customers() {
                     setSelectedCustomer(customer);
                     setModalMode("edit");
                   }}
-                  className="cursor-pointer hover:text-yellow-400"
+                  title="Edit"
+                  className="cursor-pointer text-lg md:text-xl hover:text-yellow-400 transition"
                 />
 
                 <FaTrash
@@ -162,7 +192,8 @@ export default function Customers() {
                     setSelectedCustomer(customer);
                     setModalMode("delete");
                   }}
-                  className="cursor-pointer hover:text-red-500"
+                  title="Delete"
+                  className="cursor-pointer text-lg md:text-xl hover:text-red-500 transition"
                 />
               </div>
             </div>
@@ -295,7 +326,7 @@ export default function Customers() {
           <div className="space-y-2 text-sm text-gray-300">
             <p>
               <b>Name:</b>
-							<input
+              <input
                 defaultValue={selectedCustomer.name}
                 onChange={(e) =>
                   setSelectedCustomer({
@@ -310,7 +341,7 @@ export default function Customers() {
               <b>Mobile:</b>
               <input
                 defaultValue={selectedCustomer.mobile}
-								onChange={(e) =>
+                onChange={(e) =>
                   setSelectedCustomer({
                     ...selectedCustomer,
                     mobile: e.target.value,
@@ -323,7 +354,7 @@ export default function Customers() {
               <b>Address:</b>
               <input
                 defaultValue={selectedCustomer.address}
-								onChange={(e) =>
+                onChange={(e) =>
                   setSelectedCustomer({
                     ...selectedCustomer,
                     address: e.target.value,
@@ -345,6 +376,23 @@ export default function Customers() {
           </p>
         )}
       </CustomerModal>
+      <CustomerMeasurementModal
+        open={measurementCustomerId !== null}
+        customerId={measurementCustomerId!}
+        initialData={
+          measurementCustomerId
+            ? allMeasurements[measurementCustomerId]
+            : undefined
+        }
+        customerName={selectedCustomer?.name}
+        onClose={() => setMeasurementCustomerId(null)}
+        onSave={(data) =>
+          setAllMeasurements((prev) => ({
+            ...prev,
+            [data.customerId]: data,
+          }))
+        }
+      />
     </div>
   );
 }

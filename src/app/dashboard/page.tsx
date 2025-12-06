@@ -6,25 +6,17 @@ import Customers from "../customers/customers";
 import {
   FaUsers,
   FaShoppingBag,
-  FaRulerCombined,
   FaSignOutAlt,
   FaBars,
 } from "react-icons/fa";
 import FullScreenLoader from "@/app/components/ui/FullScreenLoader";
 
-type Module = "customers" | "orders" | "measurements" | null;
+type Module = "customers" | "orders" | null;
 
 const Orders = () => (
   <div>
     <h2 className="text-2xl font-semibold mb-4">Orders</h2>
-    <p className="text-gray-400">Order management module</p>
-  </div>
-);
-
-const Measurements = () => (
-  <div>
-    <h2 className="text-2xl font-semibold mb-4">Measurements</h2>
-    <p className="text-gray-400">Measurements module</p>
+    <p className="text-gray-400">Please visit customer module to place an order</p>
   </div>
 );
 
@@ -60,8 +52,6 @@ export default function DashboardPage() {
         return <Customers />;
       case "orders":
         return <Orders />;
-      case "measurements":
-        return <Measurements />;
       default:
         return <Customers />;
     }
@@ -145,19 +135,6 @@ export default function DashboardPage() {
             Orders
           </div>
 
-          <div
-            onClick={() => changeModule("measurements")}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all
-              ${
-                activeModule === "measurements"
-                  ? "bg-gold text-black shadow-md"
-                  : "text-gray-300 hover:bg-[#1c1c1c] hover:text-gold"
-              }
-            `}
-          >
-            <FaRulerCombined />
-            Measurements
-          </div>
         </nav>
 
         <button
