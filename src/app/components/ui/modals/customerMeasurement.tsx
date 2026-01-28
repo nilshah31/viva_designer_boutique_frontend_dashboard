@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import CustomerModal from "./customer"; // reuse your existing modal
+import CustomerModal from "./customer";
 
 export interface BlouseTopMeasurements {
   blouseLength?: number;
@@ -44,6 +44,7 @@ interface Props {
   initialData?: CustomerMeasurement;
   onClose: () => void;
   onSave: (data: CustomerMeasurement) => void;
+  isViewMode: boolean;
 }
 
 const BLOUSE_FIELDS: (keyof BlouseTopMeasurements)[] = [
@@ -102,14 +103,14 @@ const LEHENGA_LABELS: Record<keyof LehengaPantMeasurements, string> = {
   mori: "Mori",
 };
 
-
 export default function CustomerMeasurementModal({
   open,
   customerId,
   initialData,
   onClose,
   onSave,
-  customerName
+  customerName,
+  isViewMode,
 }: Props) {
   const [activeTab, setActiveTab] = useState<"blouse" | "lehenga">("blouse");
 
@@ -123,19 +124,34 @@ export default function CustomerMeasurementModal({
   useEffect(() => {
     if (!open) return;
 
-    setData(
-      initialData || {
-        customerId,
-        blouseTop: {},
-        lehengaPant: {},
+    const loadMeasurements = async () => {
+      if (!initialData) {
+        const res = await fetch(`/api/measurements?customerId=${customerId}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (res.ok) {
+          const apiData = await res.json();
+          console.log("apiData", apiData.data);
+          setData(apiData.data);
+        } else {
+          setData({
+            customerId,
+            blouseTop: {},
+            lehengaPant: {},
+          });
+        }
+      } else {
+        setData(initialData);
       }
-    );
 
-    setIsDirty(false);
-    setActiveTab("blouse");
+      setIsDirty(false);
+      setActiveTab("blouse");
+    };
 
+    loadMeasurements();
   }, [open, customerId, initialData]);
-
 
   const handleClose = () => {
     if (isDirty) setShowWarning(true);
@@ -199,50 +215,60 @@ export default function CustomerMeasurementModal({
 
         {/* BLOUSE TAB */}
         {activeTab === "blouse" && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {BLOUSE_FIELDS.map((key) => (
-              <input
-                key={key}
-                type="number"
-                placeholder={BLOUSE_LABELS[key]}
-                value={data.blouseTop?.[key] ?? ""}
-                onChange={(e) => {
-                  setIsDirty(true);
-                  setData({
-                    ...data,
-                    blouseTop: {
-                      ...data.blouseTop,
-                      [key]: Number(e.target.value),
-                    },
-                  });
-                }}
-                className="px-3 py-2 bg-black border border-gray-700 rounded text-white text-sm"
-              />
+              <div key={key} className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400">
+                  {BLOUSE_LABELS[key]}
+                </label>
+
+                <input
+                  type="number"
+                  value={data.blouseTop?.[key] ?? ""}
+                  disabled={isViewMode}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setData({
+                      ...data,
+                      blouseTop: {
+                        ...data.blouseTop,
+                        [key]: Number(e.target.value),
+                      },
+                    });
+                  }}
+                  className="px-3 py-2 bg-black border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-gold"
+                />
+              </div>
             ))}
           </div>
         )}
 
         {/* LEHENGA TAB */}
         {activeTab === "lehenga" && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {LEHENGA_FIELDS.map((key) => (
-              <input
-                key={key}
-                type="number"
-                placeholder={LEHENGA_LABELS[key]}
-                value={data.lehengaPant?.[key] ?? ""}
-                onChange={(e) => {
-                  setIsDirty(true);
-                  setData({
-                    ...data,
-                    lehengaPant: {
-                      ...data.lehengaPant,
-                      [key]: Number(e.target.value),
-                    },
-                  });
-                }}
-                className="px-3 py-2 bg-black border border-gray-700 rounded text-white text-sm"
-              />
+              <div key={key} className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400">
+                  {LEHENGA_LABELS[key]}
+                </label>
+
+                <input
+                  type="number"
+                  value={data.lehengaPant?.[key] ?? ""}
+                  disabled={isViewMode}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setData({
+                      ...data,
+                      lehengaPant: {
+                        ...data.lehengaPant,
+                        [key]: Number(e.target.value),
+                      },
+                    });
+                  }}
+                  className="px-3 py-2 bg-black border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-gold"
+                />
+              </div>
             ))}
           </div>
         )}

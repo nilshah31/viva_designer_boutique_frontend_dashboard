@@ -20,7 +20,7 @@ const PAGE_SIZE = 20;
 export default function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
+    null,
   );
 
   const [measurementCustomerId, setMeasurementCustomerId] = useState<
@@ -32,28 +32,39 @@ export default function Customers() {
   >({});
 
   useEffect(() => {
-    const data: Customer[] = Array.from({ length: 67 }).map((_, i) => ({
-      id: i + 1,
-      name: `Customer ${i + 1}`,
-      mobile: `98${Math.floor(10000000 + Math.random() * 89999999)}`,
-      address: "Ahmedabad, Gujarat",
-    }));
+    const loadCustomers = async () => {
+      const res = await fetch(`/api/customers`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
 
-    setCustomers(data);
+      if (res.ok) {
+        const apiData = await res.json();
+        setCustomers(apiData.data);
+      } else {
+        setCustomers([]);
+      }
+    };
+
+    loadCustomers();
   }, []);
+
   type ModalMode = "add" | "view" | "edit" | "delete" | null;
 
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [errors, setErrors] = useState<string[]>([]);
 
-  const filteredCustomers = useMemo(() => {
-    return customers.filter(
-      (c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.mobile.includes(search)
-    );
-  }, [customers, search]);
+  const filteredCustomers = customers
+    ? useMemo(() => {
+        return customers.filter(
+          (c) =>
+            c.name.toLowerCase().includes(search.toLowerCase()) ||
+            c.mobile.includes(search),
+        );
+      }, [customers, search])
+    : [];
 
   const totalPages = Math.ceil(filteredCustomers.length / PAGE_SIZE);
 
@@ -65,6 +76,7 @@ export default function Customers() {
   const closeModal = () => {
     setSelectedCustomer(null);
     setModalMode(null);
+    setErrors([]);
   };
 
   const openAddCustomerModal = () => {
@@ -72,22 +84,85 @@ export default function Customers() {
     setModalMode("add");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedCustomer) return;
+
+    // Validation
+    const { name, mobile, address } = selectedCustomer;
+    const newErrors: string[] = [];
+
+    if (!name || name.trim() === "") {
+      newErrors.push("Name is required");
+    }
+
+    if (!mobile || mobile.length !== 10) {
+      newErrors.push("Mobile number must be exactly 10 digits");
+    }
+
+    if (!address || address.trim() === "") {
+      newErrors.push("Address is required");
+    }
+
+    // If there are errors, display them and return
+    if (newErrors.length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // Clear errors if validation passes
+    setErrors([]);
 
     console.log("selectedCustomer", selectedCustomer);
 
-    if (modalMode === "add") {
-      setCustomers((prev) => [...prev, selectedCustomer]);
-    }
+    try {
+      if (modalMode === "add") {
+        const res = await fetch(`/api/customers`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(selectedCustomer),
+        });
 
-    if (modalMode === "edit") {
-      setCustomers((prev) =>
-        prev.map((c) => (c.id === selectedCustomer.id ? selectedCustomer : c))
-      );
-    }
+        if (res.ok) {
+          const apiResponse = await res.json();
+          const newCustomer = apiResponse.data;
+          setCustomers((prev) => [...prev, newCustomer]);
+        } else {
+          console.error("Failed to add customer");
+          setErrors(["Failed to add customer"]);
+        }
+      }
 
-    closeModal();
+      if (modalMode === "edit") {
+        const res = await fetch(`/api/customers`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(selectedCustomer),
+        });
+
+        if (res.ok) {
+          const apiResponse = await res.json();
+          const updatedCustomer = apiResponse.data;
+          console.log("Updated customer response:", updatedCustomer);
+          setCustomers((prev) =>
+            prev.map((c) => {
+              // Match by id - use the updated customer's id
+              if (c.id === selectedCustomer.id) {
+                return updatedCustomer;
+              }
+              return c;
+            }),
+          );
+        } else {
+          console.error("Failed to update customer");
+          setErrors(["Failed to update customer"]);
+        }
+      }
+
+      closeModal();
+    } catch (error) {
+      console.error("Error saving customer:", error);
+      setErrors(["Error saving customer"]);
+    }
   };
 
   return (
@@ -129,9 +204,9 @@ export default function Customers() {
         {paginatedCustomers.length === 0 ? (
           <p className="text-center py-6 text-gray-500">No customers found</p>
         ) : (
-          paginatedCustomers.map((customer) => (
+          paginatedCustomers.map((customer, index) => (
             <div
-              key={customer.id}
+              key={`${customer.id}-${index}`}
               className="
           grid grid-cols-1 gap-3
           md:grid-cols-4 md:items-center
@@ -242,10 +317,10 @@ export default function Customers() {
           modalMode === "delete"
             ? "Confirm Delete"
             : modalMode === "view"
-            ? "View Customer"
-            : modalMode === "add"
-            ? "Add Customer"
-            : "Edit Customer"
+              ? "View Customer"
+              : modalMode === "add"
+                ? "Add Customer"
+                : "Edit Customer"
         }
         onClose={() => {
           setModalMode(null);
@@ -261,11 +336,26 @@ export default function Customers() {
                 Cancel
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (selectedCustomer) {
-                    setCustomers((prev) =>
-                      prev.filter((c) => c.id !== selectedCustomer.id)
-                    );
+                    console.log("selectedCustomer for delete - ", selectedCustomer);
+                    try {
+                      const res = await fetch(`/api/customers`, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: selectedCustomer.id }),
+                      });
+
+                      if (res.ok) {
+                        setCustomers((prev) =>
+                          prev.filter((c) => c.id !== selectedCustomer.id),
+                        );
+                      } else {
+                        console.error("Failed to delete customer");
+                      }
+                    } catch (error) {
+                      console.error("Error deleting customer:", error);
+                    }
                   }
                   setModalMode(null);
                   setSelectedCustomer(null);
@@ -324,42 +414,63 @@ export default function Customers() {
 
         {selectedCustomer && (modalMode === "edit" || modalMode === "add") && (
           <div className="space-y-2 text-sm text-gray-300">
+            {errors.length > 0 && (
+              <div className="bg-red-900 border border-red-700 rounded p-3 mb-4">
+                {errors.map((error, index) => (
+                  <p key={index} className="text-red-300">
+                    {error}
+                  </p>
+                ))}
+              </div>
+            )}
             <p>
               <b>Name:</b>
               <input
-                defaultValue={selectedCustomer.name}
-                onChange={(e) =>
+                value={selectedCustomer.name}
+                onChange={(e) => {
                   setSelectedCustomer({
                     ...selectedCustomer,
                     name: e.target.value,
-                  })
-                }
+                  });
+                  if (errors.length > 0) setErrors([]);
+                }}
                 className="w-full px-3 py-2 bg-black border border-gray-700 rounded text-white text-sm"
               />
             </p>
             <p>
               <b>Mobile:</b>
               <input
-                defaultValue={selectedCustomer.mobile}
-                onChange={(e) =>
+                type="tel"
+                value={selectedCustomer.mobile}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 10);
                   setSelectedCustomer({
                     ...selectedCustomer,
-                    mobile: e.target.value,
-                  })
-                }
+                    mobile: value,
+                  });
+                }}
+                placeholder="10 digit mobile number"
+                maxLength={10}
                 className="w-full px-3 py-2 bg-black border border-gray-700 rounded text-white text-sm"
               />
+              {selectedCustomer.mobile &&
+                selectedCustomer.mobile.length !== 10 && (
+                  <span className="text-red-500 text-xs">
+                    Mobile number must be 10 digits
+                  </span>
+                )}
             </p>
             <p>
               <b>Address:</b>
               <input
-                defaultValue={selectedCustomer.address}
-                onChange={(e) =>
+                value={selectedCustomer.address}
+                onChange={(e) => {
                   setSelectedCustomer({
                     ...selectedCustomer,
                     address: e.target.value,
-                  })
-                }
+                  });
+                  if (errors.length > 0) setErrors([]);
+                }}
                 className="w-full px-3 py-2 bg-black border border-gray-700 rounded text-white text-sm"
               />
             </p>
@@ -392,6 +503,7 @@ export default function Customers() {
             [data.customerId]: data,
           }))
         }
+        isViewMode={false}
       />
     </div>
   );

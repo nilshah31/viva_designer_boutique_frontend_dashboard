@@ -12,6 +12,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^0.563.0",
     "next": "^16.0.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -19,6 +21,7 @@
     "react-spinners": "^0.17.0"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "autoprefixer": "^10.4.22",

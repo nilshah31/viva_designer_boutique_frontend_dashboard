@@ -1,10 +1,20 @@
 import { Customer } from "./customers";
+import { CustomerMeasurement } from '@/app/components/ui/modals/customerMeasurement';
 
-export default function printCustomerMeasurement(customer: Customer) {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
+export default async function printCustomerMeasurement(
+  customer: Customer,
+) {
+  const res = await fetch(`/api/measurements?customerId=${customer.id}`);
+  const json = await res.json();
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return;
 
-    printWindow.document.write(`
+  const blouse = json.data.blouseTopMeasurements || {};
+  const lehenga = json.data.lehengaPantMeasurements || {};
+
+  const getValue = (val?: number) => (val !== undefined ? val : "");
+
+  printWindow.document.write(`
     <html>
       <head>
         <title>Measurement Sheet</title>
@@ -82,11 +92,10 @@ export default function printCustomerMeasurement(customer: Customer) {
           </div>
           <div class="row">
             <div class="label">Address:</div>
-            <div>${customer.address}</div>
+            <div>${customer.address || ""}</div>
           </div>
         </div>
 
-        <!-- ✅ SIDE BY SIDE TABLES -->
         <div class="tables-wrapper">
 
           <!-- LEFT TABLE -->
@@ -94,20 +103,20 @@ export default function printCustomerMeasurement(customer: Customer) {
             <h3>Blouse / Top</h3>
             <table>
               <tr><th>Field</th><th>Value</th></tr>
-              <tr><td>Blouse Length</td><td></td></tr>
-              <tr><td>Kurta Length</td><td></td></tr>
-              <tr><td>Upper Chest</td><td></td></tr>
-              <tr><td>Chest</td><td></td></tr>
-              <tr><td>Waist</td><td></td></tr>
-              <tr><td>Hip</td><td></td></tr>
-              <tr><td>Shoulder</td><td></td></tr>
-              <tr><td>Sleeve Length</td><td></td></tr>
-              <tr><td>Mori</td><td></td></tr>
-              <tr><td>By Shape</td><td></td></tr>
-              <tr><td>Armhole</td><td></td></tr>
-              <tr><td>Front Neck Depth</td><td></td></tr>
-              <tr><td>Back Neck Depth</td><td></td></tr>
-              <tr><td>Dart Point</td><td></td></tr>
+              <tr><td>Blouse Length</td><td>${getValue(blouse.blouseLength)}</td></tr>
+              <tr><td>Kurta Length</td><td>${getValue(blouse.kurtaLength)}</td></tr>
+              <tr><td>Upper Chest</td><td>${getValue(blouse.upperChest)}</td></tr>
+              <tr><td>Chest</td><td>${getValue(blouse.chest)}</td></tr>
+              <tr><td>Waist</td><td>${getValue(blouse.waist)}</td></tr>
+              <tr><td>Hip</td><td>${getValue(blouse.hip)}</td></tr>
+              <tr><td>Shoulder</td><td>${getValue(blouse.shoulder)}</td></tr>
+              <tr><td>Sleeve Length</td><td>${getValue(blouse.sleeveLength)}</td></tr>
+              <tr><td>Mori</td><td>${getValue(blouse.mori)}</td></tr>
+              <tr><td>By Shape</td><td>${getValue(blouse.byshape)}</td></tr>
+              <tr><td>Armhole</td><td>${getValue(blouse.armhole)}</td></tr>
+              <tr><td>Front Neck Depth</td><td>${getValue(blouse.frontNeckDepth)}</td></tr>
+              <tr><td>Back Neck Depth</td><td>${getValue(blouse.backNeckDepth)}</td></tr>
+              <tr><td>Dart Point</td><td>${getValue(blouse.dartPoint)}</td></tr>
             </table>
           </div>
 
@@ -116,14 +125,14 @@ export default function printCustomerMeasurement(customer: Customer) {
             <h3>Lehenga / Pant</h3>
             <table>
               <tr><th>Field</th><th>Value</th></tr>
-              <tr><td>Length</td><td></td></tr>
-              <tr><td>Waist</td><td></td></tr>
-              <tr><td>Hip</td><td></td></tr>
-              <tr><td>Thigh</td><td></td></tr>
-              <tr><td>Knee</td><td></td></tr>
-              <tr><td>Ankle</td><td></td></tr>
-              <tr><td>Crotch</td><td></td></tr>
-              <tr><td>Mori</td><td></td></tr>
+              <tr><td>Length</td><td>${getValue(lehenga.length)}</td></tr>
+              <tr><td>Waist</td><td>${getValue(lehenga.waist)}</td></tr>
+              <tr><td>Hip</td><td>${getValue(lehenga.hip)}</td></tr>
+              <tr><td>Thigh</td><td>${getValue(lehenga.thigh)}</td></tr>
+              <tr><td>Knee</td><td>${getValue(lehenga.knee)}</td></tr>
+              <tr><td>Ankle</td><td>${getValue(lehenga.ankle)}</td></tr>
+              <tr><td>Crotch</td><td>${getValue(lehenga.crotch)}</td></tr>
+              <tr><td>Mori</td><td>${getValue(lehenga.mori)}</td></tr>
             </table>
           </div>
 
@@ -136,5 +145,5 @@ export default function printCustomerMeasurement(customer: Customer) {
     </html>
   `);
 
-    printWindow.document.close();
-  };
+  printWindow.document.close();
+}

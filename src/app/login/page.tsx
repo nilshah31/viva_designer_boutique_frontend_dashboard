@@ -3,18 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ClipLoader from "react-spinners/ClipLoader";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false); // ✅ Loader state
+  const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError("Email and password are required");
+      setError("Username and password are required");
       return;
     }
 
@@ -53,29 +55,37 @@ export default function LoginPage() {
         </p>
 
         {error && (
-          <p className="text-red-500 text-sm mb-3 text-center">
-            {error}
-          </p>
+          <p className="text-red-500 text-sm mb-3 text-center">{error}</p>
         )}
 
         <div className="space-y-4">
           <input
             type="email"
-            placeholder="Email"
+            placeholder="Username"
             value={email}
             disabled={loading}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 rounded-xl bg-black text-white border border-gray-700 disabled:opacity-50"
           />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            disabled={loading}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-black text-white border border-gray-700 disabled:opacity-50"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              disabled={loading}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 pr-12 rounded-xl bg-black text-white border border-gray-700 disabled:opacity-50"
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
 
           <button
             onClick={handleLogin}
