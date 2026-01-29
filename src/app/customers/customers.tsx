@@ -7,6 +7,8 @@ import { FaRulerCombined } from "react-icons/fa6";
 import CustomerMeasurementModal from "@/app/components/ui/modals/customerMeasurement";
 import { CustomerMeasurement } from "../measurements/interfaces/customerMeasurements.interface";
 import printCustomerMeasurement from "./printCustomerMeasurement";
+import FullScreenLoader from "@/app/components/ui/FullScreenLoader";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 export interface Customer {
   id: number;
@@ -18,6 +20,7 @@ export interface Customer {
 const PAGE_SIZE = 20;
 
 export default function Customers() {
+  const { canDeleteCustomer, canEditCustomer, canAddCustomer } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null,
@@ -31,18 +34,28 @@ export default function Customers() {
     Record<number, CustomerMeasurement>
   >({});
 
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     const loadCustomers = async () => {
-      const res = await fetch(`/api/customers`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/customers`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
 
-      if (res.ok) {
-        const apiData = await res.json();
-        setCustomers(apiData.data);
-      } else {
+        if (res.ok) {
+          const apiData = await res.json();
+          setCustomers(apiData.data);
+        } else {
+          setCustomers([]);
+        }
+      } catch (error) {
+        console.error("Error loading customers:", error);
         setCustomers([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -114,6 +127,7 @@ export default function Customers() {
 
     console.log("selectedCustomer", selectedCustomer);
 
+    setIsLoading(true);
     try {
       if (modalMode === "add") {
         const res = await fetch(`/api/customers`, {
@@ -162,11 +176,14 @@ export default function Customers() {
     } catch (error) {
       console.error("Error saving customer:", error);
       setErrors(["Error saving customer"]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="space-y-6 relative px-2 md:px-0">
+      <FullScreenLoader show={isLoading} text="Processing..." />
       {/* HEADER */}
       <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <h2 className="text-2xl font-semibold">Customers</h2>
@@ -182,12 +199,15 @@ export default function Customers() {
             className="px-4 py-2 rounded-lg bg-black border border-gray-700 text-white text-sm outline-none flex-1 min-w-[200px]"
           />
 
-          <button
-            onClick={openAddCustomerModal}
-            className="bg-gold text-black px-4 py-2 rounded-lg text-sm font-semibold hover:brightness-110"
-          >
-            + Add Customer
-          </button>
+          {canAddCustomer() && (
+            <button
+              onClick={openAddCustomerModal}
+              disabled={isLoading}
+              className="bg-gold text-black px-4 py-2 rounded-lg text-sm font-semibold hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + Add Customer
+            </button>
+          )}
         </div>
       </div>
 
@@ -248,7 +268,7 @@ export default function Customers() {
 
                 {/* ✅ PRINT BUTTON */}
                 <FaPrint
-                  onClick={() => printCustomerMeasurement(customer)}
+                  onClick={() => printCustomerMeasurement(customer, allMeasurements[customer.id])}
                   title="Print Measurement"
                   className="cursor-pointer text-lg md:text-xl text-gray-400 hover:text-green-300 transition"
                 />
@@ -262,14 +282,16 @@ export default function Customers() {
                   className="cursor-pointer text-lg md:text-xl hover:text-yellow-400 transition"
                 />
 
-                <FaTrash
-                  onClick={() => {
-                    setSelectedCustomer(customer);
-                    setModalMode("delete");
-                  }}
-                  title="Delete"
-                  className="cursor-pointer text-lg md:text-xl hover:text-red-500 transition"
-                />
+                {canDeleteCustomer() && (
+                  <FaTrash
+                    onClick={() => {
+                      setSelectedCustomer(customer);
+                      setModalMode("delete");
+                    }}
+                    title="Delete"
+                    className="cursor-pointer text-lg md:text-xl hover:text-red-500 transition"
+                  />
+                )}
               </div>
             </div>
           ))
@@ -339,6 +361,7 @@ export default function Customers() {
                 onClick={async () => {
                   if (selectedCustomer) {
                     console.log("selectedCustomer for delete - ", selectedCustomer);
+                    setIsLoading(true);
                     try {
                       const res = await fetch(`/api/customers`, {
                         method: "DELETE",
@@ -355,12 +378,15 @@ export default function Customers() {
                       }
                     } catch (error) {
                       console.error("Error deleting customer:", error);
+                    } finally {
+                      setIsLoading(false);
                     }
                   }
                   setModalMode(null);
                   setSelectedCustomer(null);
                 }}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm"
+                disabled={isLoading}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Delete
               </button>
@@ -379,7 +405,8 @@ export default function Customers() {
 
               <button
                 onClick={handleSave}
-                className="px-4 py-2 rounded-lg bg-gold text-black text-sm"
+                disabled={isLoading}
+                className="px-4 py-2 rounded-lg bg-gold text-black text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save
               </button>

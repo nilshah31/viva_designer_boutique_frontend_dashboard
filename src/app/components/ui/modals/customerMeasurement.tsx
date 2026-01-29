@@ -120,6 +120,7 @@ export default function CustomerMeasurementModal({
 
   const [isDirty, setIsDirty] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -158,10 +159,43 @@ export default function CustomerMeasurementModal({
     else onClose();
   };
 
-  const handleSave = () => {
-    onSave(data);
-    setIsDirty(false);
-    onClose();
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      // Prepare payload - only include non-empty measurements
+      const payload: any = {
+        customerId,
+      };
+
+      // Only include blouseTop if it has any values
+      if (data.blouseTop && Object.values(data.blouseTop).some(v => v !== undefined && v !== null && v !== "")) {
+        payload.blouseTop = data.blouseTop;
+      }
+
+      // Only include lehengaPant if it has any values
+      if (data.lehengaPant && Object.values(data.lehengaPant).some(v => v !== undefined && v !== null && v !== "")) {
+        payload.lehengaPant = data.lehengaPant;
+      }
+
+      const res = await fetch(`/api/measurements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const apiData = await res.json();
+        onSave(apiData.data || data);
+        setIsDirty(false);
+        onClose();
+      } else {
+        console.error("Failed to save measurements");
+      }
+    } catch (error) {
+      console.error("Error saving measurements:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -175,13 +209,15 @@ export default function CustomerMeasurementModal({
           <>
             <button
               onClick={handleClose}
-              className="px-4 py-2 bg-gray-700 text-white rounded text-sm"
+              disabled={isLoading}
+              className="px-4 py-2 bg-gray-700 text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Close
             </button>
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-gold text-black rounded text-sm"
+              disabled={isLoading}
+              className="px-4 py-2 bg-gold text-black rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Save
             </button>
@@ -224,17 +260,42 @@ export default function CustomerMeasurementModal({
 
                 <input
                   type="number"
+                  inputMode="decimal"
                   value={data.blouseTop?.[key] ?? ""}
                   disabled={isViewMode}
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  onKeyDown={(e) => {
+                    // Block 'e', 'E', '+', '-' to prevent scientific notation
+                    if (["e", "E", "+", "-"].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   onChange={(e) => {
-                    setIsDirty(true);
-                    setData({
-                      ...data,
-                      blouseTop: {
-                        ...data.blouseTop,
-                        [key]: Number(e.target.value),
-                      },
-                    });
+                    let value = e.target.value;
+                    if (value === "") {
+                      setIsDirty(true);
+                      setData({
+                        ...data,
+                        blouseTop: {
+                          ...data.blouseTop,
+                          [key]: undefined,
+                        },
+                      });
+                      return;
+                    }
+                    const numValue = Number(value);
+                    if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+                      setIsDirty(true);
+                      setData({
+                        ...data,
+                        blouseTop: {
+                          ...data.blouseTop,
+                          [key]: numValue,
+                        },
+                      });
+                    }
                   }}
                   className="px-3 py-2 bg-black border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-gold"
                 />
@@ -254,17 +315,42 @@ export default function CustomerMeasurementModal({
 
                 <input
                   type="number"
+                  inputMode="decimal"
                   value={data.lehengaPant?.[key] ?? ""}
                   disabled={isViewMode}
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  onKeyDown={(e) => {
+                    // Block 'e', 'E', '+', '-' to prevent scientific notation
+                    if (["e", "E", "+", "-"].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   onChange={(e) => {
-                    setIsDirty(true);
-                    setData({
-                      ...data,
-                      lehengaPant: {
-                        ...data.lehengaPant,
-                        [key]: Number(e.target.value),
-                      },
-                    });
+                    let value = e.target.value;
+                    if (value === "") {
+                      setIsDirty(true);
+                      setData({
+                        ...data,
+                        lehengaPant: {
+                          ...data.lehengaPant,
+                          [key]: undefined,
+                        },
+                      });
+                      return;
+                    }
+                    const numValue = Number(value);
+                    if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+                      setIsDirty(true);
+                      setData({
+                        ...data,
+                        lehengaPant: {
+                          ...data.lehengaPant,
+                          [key]: numValue,
+                        },
+                      });
+                    }
                   }}
                   className="px-3 py-2 bg-black border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-gold"
                 />

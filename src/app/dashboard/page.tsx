@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Customers from "../customers/customers";
+import Users from "../users/page";
 import {
   FaUsers,
   FaShoppingBag,
   FaSignOutAlt,
   FaBars,
+  FaCog,
 } from "react-icons/fa";
 import FullScreenLoader from "@/app/components/ui/FullScreenLoader";
+import { useAuth } from "@/app/providers/AuthProvider";
 
-type Module = "customers" | "orders" | null;
+type Module = "customers" | "orders" | "users" | null;
 
 const Orders = () => (
   <div>
@@ -22,10 +25,16 @@ const Orders = () => (
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { canManageUsers, isLoading: authLoading } = useAuth();
 
   const [activeModule, setActiveModule] = useState<Module>("customers");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false); // ✅ GLOBAL BLOCKING LOADER
+
+  // Log for debugging
+  useEffect(() => {
+    console.log("Dashboard - authLoading:", authLoading, "canManageUsers:", canManageUsers());
+  }, [authLoading, canManageUsers]);
 
   const logout = async () => {
     try {
@@ -52,6 +61,8 @@ export default function DashboardPage() {
         return <Customers />;
       case "orders":
         return <Orders />;
+      case "users":
+        return <Users />;
       default:
         return <Customers />;
     }
@@ -134,6 +145,22 @@ export default function DashboardPage() {
             <FaShoppingBag />
             Orders
           </div>
+
+          {canManageUsers() && (
+            <div
+              onClick={() => changeModule("users")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all
+                ${
+                  activeModule === "users"
+                    ? "bg-gold text-black shadow-md"
+                    : "text-gray-300 hover:bg-[#1c1c1c] hover:text-gold"
+                }
+              `}
+            >
+              <FaCog />
+              Users
+            </div>
+          )}
 
         </nav>
 

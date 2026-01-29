@@ -35,6 +35,9 @@ export default function LoginPage() {
         throw new Error(data?.message || "Invalid login credentials");
       }
 
+      // Log cookies after login
+      console.log("🔐 Login - Cookies:", document.cookie);
+
       router.replace("/dashboard");
     } catch (err: any) {
       setError(err.message || "Login failed");

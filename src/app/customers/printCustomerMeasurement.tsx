@@ -3,14 +3,25 @@ import { CustomerMeasurement } from '@/app/components/ui/modals/customerMeasurem
 
 export default async function printCustomerMeasurement(
   customer: Customer,
+  measurements?: CustomerMeasurement,
 ) {
-  const res = await fetch(`/api/measurements?customerId=${customer.id}`);
-  const json = await res.json();
+  let blouse = {};
+  let lehenga = {};
+
+  if (measurements) {
+    // Use provided measurements from parent component
+    blouse = measurements.blouseTop || {};
+    lehenga = measurements.lehengaPant || {};
+  } else {
+    // Fallback to fetching from API if not provided
+    const res = await fetch(`/api/measurements?customerId=${customer.id}`);
+    const json = await res.json();
+    blouse = json.data?.blouseTop || {};
+    lehenga = json.data?.lehengaPant || {};
+  }
+
   const printWindow = window.open("", "_blank");
   if (!printWindow) return;
-
-  const blouse = json.data.blouseTopMeasurements || {};
-  const lehenga = json.data.lehengaPantMeasurements || {};
 
   const getValue = (val?: number) => (val !== undefined ? val : "");
 
