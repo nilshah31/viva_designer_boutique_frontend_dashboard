@@ -5,8 +5,8 @@ export default async function printCustomerMeasurement(
   customer: Customer,
   measurements?: CustomerMeasurement,
 ) {
-  let blouse = {};
-  let lehenga = {};
+  let blouse: Record<string, any> = {};
+  let lehenga: Record<string, any> = {};
 
   if (measurements) {
     // Use provided measurements from parent component
