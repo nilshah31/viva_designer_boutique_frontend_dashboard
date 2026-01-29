@@ -27,7 +27,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       for (let cookie of cookies) {
         cookie = cookie.trim();
         if (cookie.startsWith(name + "=")) {
-          return cookie.substring(name.length + 1);
+          let value = cookie.substring(name.length + 1);
+          // Decode URL-encoded value if needed
+          try {
+            value = decodeURIComponent(value);
+          } catch (e) {
+            // If decoding fails, use as-is
+          }
+          return value;
         }
       }
       return null;
@@ -35,11 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     console.log("📖 AuthProvider - All cookies:", document.cookie);
     const roleValue = getCookieValue("role");
-    console.log("📖 AuthProvider - Role cookie value:", roleValue);
+    console.log("📖 AuthProvider - Raw role cookie value:", roleValue, "Type:", typeof roleValue);
     
     if (roleValue) {
-      setRole(roleValue as Role);
-      console.log("✅ AuthProvider - Role set to:", roleValue);
+      const trimmedRole = roleValue.trim().toLowerCase();
+      setRole(trimmedRole as Role);
+      console.log("✅ AuthProvider - Role set to:", trimmedRole);
     } else {
       console.log("❌ AuthProvider - No role cookie found. Will retry in 500ms");
       // Retry after a short delay
@@ -47,8 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const retryRoleValue = getCookieValue("role");
         console.log("🔄 AuthProvider - Retry: Role cookie value:", retryRoleValue);
         if (retryRoleValue) {
-          setRole(retryRoleValue as Role);
-          console.log("✅ AuthProvider - Role set on retry to:", retryRoleValue);
+          const trimmedRole = retryRoleValue.trim().toLowerCase();
+          setRole(trimmedRole as Role);
+          console.log("✅ AuthProvider - Role set on retry to:", trimmedRole);
         }
       }, 500);
     }
@@ -57,8 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const getPermission = (permission: keyof typeof ROLE_PERMISSIONS[Role.Admin]): boolean => {
-    if (!role) return false;
-    const hasPermission = ROLE_PERMISSIONS[role]?.[permission] ?? false;
+    if (!role) {
+      console.log("⚠️ getPermission - No role set");
+      return false;
+    }
+    const permissions = ROLE_PERMISSIONS[role as Role];
+    console.log(`✅ getPermission - Checking ${permission} for role ${role}:`, permissions?.[permission]);
+    const hasPermission = permissions?.[permission] ?? false;
     return Boolean(hasPermission);
   };
 
@@ -84,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    console.log("❌ useAuth - AuthContext is undefined");
     throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
