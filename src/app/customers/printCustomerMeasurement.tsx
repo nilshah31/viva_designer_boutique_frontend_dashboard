@@ -23,12 +23,16 @@ export default async function printCustomerMeasurement(
   const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
+  // Set document title with customer name
+  const sanitizedName = customer.name.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 50);
+  const documentTitle = `Measurement_${sanitizedName}_${new Date().toISOString().split("T")[0]}`;
+
   const getValue = (val?: number) => (val !== undefined ? val : "");
 
   printWindow.document.write(`
     <html>
       <head>
-        <title>Measurement Sheet</title>
+        <title>${documentTitle}</title>
         <style>
           body {
             font-family: Arial, sans-serif;

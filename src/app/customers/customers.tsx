@@ -2,11 +2,13 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { FaEye, FaPencilAlt, FaPrint, FaTrash } from "react-icons/fa";
+import { FaWhatsapp } from "react-icons/fa6";
 import CustomerModal from "@/app/components/ui/modals/customer"; // adjust path if needed
 import { FaRulerCombined } from "react-icons/fa6";
 import CustomerMeasurementModal from "@/app/components/ui/modals/customerMeasurement";
 import { CustomerMeasurement } from "../measurements/interfaces/customerMeasurements.interface";
 import printCustomerMeasurement from "./printCustomerMeasurement";
+import { shareToWhatsApp } from "./whatsappShareMeasurement";
 import FullScreenLoader from "@/app/components/ui/FullScreenLoader";
 import { useAuth } from "@/app/providers/AuthProvider";
 
@@ -271,6 +273,13 @@ export default function Customers() {
                   onClick={() => printCustomerMeasurement(customer, allMeasurements[customer.id])}
                   title="Print Measurement"
                   className="cursor-pointer text-lg md:text-xl text-gray-400 hover:text-green-300 transition"
+                />
+
+                {/* ✅ WHATSAPP SHARE BUTTON */}
+                <FaWhatsapp
+                  onClick={() => shareToWhatsApp(customer, allMeasurements[customer.id])}
+                  title="Share on WhatsApp"
+                  className="cursor-pointer text-lg md:text-xl text-gray-400 hover:text-green-500 transition"
                 />
 
                 <FaPencilAlt
