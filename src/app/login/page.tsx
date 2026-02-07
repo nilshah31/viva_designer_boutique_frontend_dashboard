@@ -35,8 +35,13 @@ export default function LoginPage() {
         throw new Error(data?.message || "Invalid login credentials");
       }
 
-      // Log cookies after login
-      console.log("🔐 Login - Cookies:", document.cookie);
+      const data = await res.json();
+      
+      // Store user in localStorage immediately for centralized auth state
+      if (data.user) {
+        console.log("✅ Login - Storing user in localStorage:", data.user);
+        localStorage.setItem("auth_user", JSON.stringify(data.user));
+      }
 
       router.replace("/dashboard");
     } catch (err: any) {

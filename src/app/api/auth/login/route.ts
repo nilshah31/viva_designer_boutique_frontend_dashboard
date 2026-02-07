@@ -29,11 +29,20 @@ export async function POST(req: Request) {
     // Decode token to extract role
     const decoded = jwt.decode(accessToken) as any;
     const role = decoded?.role || "tailor";
+    const userId = decoded?.sub || body.email;
+    const username = decoded?.username || body.email;
 
-    console.log("🔐 Login - Decoded JWT:", { username: decoded?.username, role: decoded?.role, sub: decoded?.sub });
-    console.log("🔐 Login - Setting role cookie:", role);
+    console.log("✅ Login route - User authenticated:", { userId, username, role });
 
-    const res = NextResponse.json({ success: true });
+    // Return user data so client can immediately update localStorage
+    const res = NextResponse.json({ 
+      success: true,
+      user: {
+        id: userId,
+        username,
+        role,
+      }
+    });
 
     res.cookies.set("accessToken", accessToken, {
       httpOnly: true,
@@ -49,9 +58,10 @@ export async function POST(req: Request) {
       path: "/",
     });
 
-    // Store role in NON-httpOnly cookie so frontend can read it
-    // (role is not sensitive - it's already in the JWT payload)
+    // Store role in NON-httpOnly cookie for instant client-side access
+    // (role is not sensitive - it's already in JWT payload)
     res.cookies.set("role", role, {
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",

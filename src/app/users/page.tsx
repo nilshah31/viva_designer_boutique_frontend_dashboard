@@ -10,7 +10,7 @@ import FullScreenLoader from "@/app/components/ui/FullScreenLoader";
 
 export default function UsersPage() {
   const router = useRouter();
-  const { role, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, canManageUsers } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -20,15 +20,14 @@ export default function UsersPage() {
   useEffect(() => {
     if (!authLoading) {
       // Check if user has canManageUsers permission
-      const hasPermission = role === "admin";
-      if (!hasPermission) {
+      if (!canManageUsers()) {
         router.replace("/dashboard");
       } else {
         // Only load users if user has permission
         loadUsers();
       }
     }
-  }, [authLoading, role, router]);
+  }, [authLoading, canManageUsers, router]);
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -158,7 +157,7 @@ export default function UsersPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {role === "admin" && (
+                        {canManageUsers() && (
                           <button
                             onClick={() => user.id && handleDeleteUser(user.id)}
                             className="text-red-500 hover:text-red-300 transition"
@@ -181,7 +180,7 @@ export default function UsersPage() {
                     <div>
                       <p className="font-semibold text-white">{user.username}</p>
                     </div>
-                    {role === "admin" && (
+                    {canManageUsers() && (
                       <button
                         onClick={() => user.id && handleDeleteUser(user.id)}
                         className="text-red-500 hover:text-red-300"

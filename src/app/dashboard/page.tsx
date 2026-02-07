@@ -25,7 +25,7 @@ const Orders = () => (
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { canManageUsers, isLoading: authLoading } = useAuth();
+  const { canManageUsers, isLoading: authLoading, user } = useAuth();
 
   const [activeModule, setActiveModule] = useState<Module>("customers");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -33,8 +33,8 @@ export default function DashboardPage() {
 
   // Log for debugging
   useEffect(() => {
-    console.log("Dashboard - authLoading:", authLoading, "canManageUsers:", canManageUsers());
-  }, [authLoading, canManageUsers]);
+    console.log("✅ Dashboard - User auth loaded:", { user, authLoading, canManageUsers: canManageUsers() });
+  }, [authLoading, user]);
 
   const logout = async () => {
     try {
@@ -72,7 +72,7 @@ export default function DashboardPage() {
     <div className="min-h-screen flex bg-black text-white relative">
 
       {/* ✅ FULL SCREEN BLOCKING LOADER */}
-      <FullScreenLoader show={loading} text="Please wait..." />
+      <FullScreenLoader show={loading || authLoading} text={authLoading ? "Loading permissions..." : "Please wait..."} />
 
       {/* ✅ MOBILE TOP BAR */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-[#111] border-b border-gray-800 flex items-center justify-between px-4 py-3">
